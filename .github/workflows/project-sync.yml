@@ -1,0 +1,105 @@
+name: Project Sync (issues -> Backlog)
+
+on:
+  issues:
+    types: [opened, labeled]
+
+jobs:
+  add-to-backlog:
+    runs-on: ubuntu-latest
+    if: github.event.issue.pull_request == null
+    steps:
+      - name: Checkout (for tools)
+        uses: actions/checkout@v4
+
+      - name: Resolve project and backlog column IDs
+        id: resolve_ids
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          PROJECT_SYNC_TOKEN: ${{ secrets.PROJECT_SYNC_TOKEN }}
+          PROJECT_NAME: ${{ vars.PROJECT_NAME || 'Backlog' }}
+        run: |
+          # Use PROJECT_SYNC_TOKEN if available, otherwise use GITHUB_TOKEN
+          TOKEN="${PROJECT_SYNC_TOKEN:-$GITHUB_TOKEN}"
+          if [ -z "$TOKEN" ]; then
+            echo "ERROR: Neither PROJECT_SYNC_TOKEN secret nor GITHUB_TOKEN available" >&2
+            exit 1
+          fi
+          
+          OWNER="${{ github.repository_owner }}"
+          REPO="${{ github.event.repository.name }}"
+          
+          # Find the project by name
+          project_id=$(curl -s -H "Authorization: token $TOKEN" \
+            -H "Accept: application/vnd.github.inertia-preview+json" \
+            "https://api.github.com/repos/${OWNER}/${REPO}/projects" \
+            | jq -r --arg NAME "$PROJECT_NAME" '.[] | select(.name==$NAME) | .id' | head -n1)
+          
+          if [ -z "$project_id" ]; then
+            echo "ERROR: Project '$PROJECT_NAME' not found in repo ${OWNER}/${REPO}" >&2
+            echo "Create a classic project first via GitHub UI: https://github.com/${OWNER}/${REPO}/projects/new" >&2
+            exit 1
+          fi
+          
+          # Find the Backlog column in the project
+          backlog_col_id=$(curl -s -H "Authorization: token $TOKEN" \
+            -H "Accept: application/vnd.github.inertia-preview+json" \
+            "https://api.github.com/projects/${project_id}/columns" \
+            | jq -r '.[] | select(.name=="Backlog") | .id' | head -n1)
+          
+          if [ -z "$backlog_col_id" ]; then
+            echo "ERROR: 'Backlog' column not found in project '$PROJECT_NAME'" >&2
+            exit 1
+          fi
+          
+          echo "project_id=$project_id" >> $GITHUB_OUTPUT
+          echo "backlog_column_id=$backlog_col_id" >> $GITHUB_OUTPUT
+          echo "token=$TOKEN" >> $GITHUB_OUTPUT
+
+      - name: Resolve issue DB id
+        id: issue_id
+        env:
+          TOKEN: ${{ steps.resolve_ids.outputs.token }}
+        run: |
+          issue_number=${{ github.event.issue.number }}
+          repo=${{ github.repository }}
+          issue_id=$(curl -s -H "Authorization: token $TOKEN" https://api.github.com/repos/${repo}/issues/${issue_number} | jq -r .id)
+          echo "issue_id=$issue_id" >> $GITHUB_OUTPUT
+
+      - name: Check existing card in Backlog column
+        env:
+          TOKEN: ${{ steps.resolve_ids.outputs.token }}
+          BACKLOG_COLUMN_ID: ${{ steps.resolve_ids.outputs.backlog_column_id }}
+          ISSUE_ID: ${{ steps.issue_id.outputs.issue_id }}
+        run: |
+          # List cards in the Backlog column and see if one matches this issue id
+          cards=$(curl -s -H "Authorization: token $TOKEN" -H "Accept: application/vnd.github.inertia-preview+json" \
+            https://api.github.com/projects/columns/${BACKLOG_COLUMN_ID}/cards)
+          exists=$(echo "$cards" | jq --argjson id "$ISSUE_ID" -r '.[] | select(.content_id==$id) | .id' | head -n1)
+          if [ -n "$exists" ]; then
+            echo "Card already exists (id=$exists); skipping"
+            exit 0
+          fi
+
+      - name: Create card in Backlog column
+        env:
+          TOKEN: ${{ steps.resolve_ids.outputs.token }}
+          BACKLOG_COLUMN_ID: ${{ steps.resolve_ids.outputs.backlog_column_id }}
+          ISSUE_ID: ${{ steps.issue_id.outputs.issue_id }}
+        run: |
+          resp=$(curl -s -X POST \
+            -H "Authorization: token $TOKEN" \
+            -H "Accept: application/vnd.github.inertia-preview+json" \
+            https://api.github.com/projects/columns/${BACKLOG_COLUMN_ID}/cards \
+            -d "{\"content_id\": ${ISSUE_ID}, \"content_type\": \"Issue\"}")
+          echo "$resp" | jq -r '.url // (.message // "created card response unknown")'
+
+      - name: Done
+        run: echo "Project sync step complete"
+
+# Notes:
+# - Configuration: Set repository variable PROJECT_NAME (defaults to 'Backlog' if not set)
+# - Token: Uses PROJECT_SYNC_TOKEN secret if available, otherwise GITHUB_TOKEN
+#   - If using GITHUB_TOKEN and it lacks permissions, set PROJECT_SYNC_TOKEN with a fine-grained PAT
+# - IDs are resolved at runtime by project/column name—no need to store numeric IDs
+# - This workflow uses the classic Projects REST API (inertia-preview). If you use Projects (beta) the API and approach differ.
