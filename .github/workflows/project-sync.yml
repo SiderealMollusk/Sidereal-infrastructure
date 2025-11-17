@@ -29,15 +29,30 @@ jobs:
           OWNER="${{ github.repository_owner }}"
           REPO="${{ github.event.repository.name }}"
           
-          # Find the project by name
-          project_id=$(curl -s -H "Authorization: token $TOKEN" \
+          # Find the project by name (try repo-level classic projects first, then user-level projects)
+          resp_repo=$(curl -s -H "Authorization: token $TOKEN" \
             -H "Accept: application/vnd.github.inertia-preview+json" \
-            "https://api.github.com/repos/${OWNER}/${REPO}/projects" \
-            | jq -r --arg NAME "$PROJECT_NAME" '.[] | select(.name==$NAME) | .id' | head -n1)
-          
+            "https://api.github.com/repos/${OWNER}/${REPO}/projects")
+
+          project_id=""
+          if echo "$resp_repo" | jq -e 'type=="array"' >/dev/null 2>&1; then
+            project_id=$(echo "$resp_repo" | jq -r --arg NAME "$PROJECT_NAME" '.[] | select(.name==$NAME) | .id' | head -n1)
+          fi
+
+          # If not found at repo level, try user-level projects (your personal project boards)
           if [ -z "$project_id" ]; then
-            echo "ERROR: Project '$PROJECT_NAME' not found in repo ${OWNER}/${REPO}" >&2
-            echo "Create a classic project first via GitHub UI: https://github.com/${OWNER}/${REPO}/projects/new" >&2
+            resp_user=$(curl -s -H "Authorization: token $TOKEN" \
+              -H "Accept: application/vnd.github.inertia-preview+json" \
+              "https://api.github.com/users/${OWNER}/projects")
+            if echo "$resp_user" | jq -e 'type=="array"' >/dev/null 2>&1; then
+              project_id=$(echo "$resp_user" | jq -r --arg NAME "$PROJECT_NAME" '.[] | select(.name==$NAME) | .id' | head -n1)
+            fi
+          fi
+
+          if [ -z "$project_id" ]; then
+            echo "ERROR: Project '$PROJECT_NAME' not found in repo ${OWNER}/${REPO} or user ${OWNER}" >&2
+            echo "If you use a user-level project, ensure PROJECT_NAME matches the project name and the token has access." >&2
+            echo "Create a classic project via UI if needed: https://github.com/${OWNER}/${REPO}/projects/new" >&2
             exit 1
           fi
           
