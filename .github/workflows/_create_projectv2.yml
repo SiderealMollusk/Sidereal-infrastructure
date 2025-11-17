@@ -44,17 +44,12 @@ jobs:
 
           echo "$TOKEN" | gh auth login --with-token
 
-          # Try to create the project (repo-scoped). If that fails try the alternate form.
-          if gh project create --repo "$OWNER/$REPO" --title "$PROJECT_NAME" --format json > project.json 2>&1; then
+          # Create the project using only --owner and --title (no --repo flag)
+          if gh project create --owner "$OWNER" --title "$PROJECT_NAME" --format json > project.json 2>&1; then
             echo "Project creation response:" && cat project.json
           else
-            echo "First create attempt failed, trying alternate form..."
-            if gh project create --owner "$OWNER" --repo "$REPO" --title "$PROJECT_NAME" --format json > project.json 2>&1; then
-              echo "Project creation response:" && cat project.json
-            else
-              echo "Project creation failed; output:" && cat project.json || true
-              exit 1
-            fi
+            echo "Project creation failed; output:" && cat project.json || true
+            exit 1
           fi
 
       - name: Print created project
