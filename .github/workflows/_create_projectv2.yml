@@ -26,18 +26,23 @@ jobs:
 
       - name: Create repo-level ProjectV2 with gh
         env:
-          PROJECT_SYNC_TOKEN: ${{ secrets.PROJECT_SYNC_TOKEN }}
+          FINEGRAIN_TOKEN: ${{ secrets.PERMISSIVE_FINEGRAIN }}
+          CLASSIC_TOKEN: ${{ secrets.PERMISSIVE_CLASSIC }}
           PROJECT_NAME: ${{ vars.PROJECT_NAME }}
           OWNER: ${{ github.repository_owner }}
           REPO: ${{ github.event.repository.name }}
         run: |
           set -euo pipefail
-          if [ -z "${PROJECT_SYNC_TOKEN:-}" ]; then
-            echo "ERROR: PROJECT_SYNC_TOKEN is empty. Provide a token with Projects (v2) write access." >&2
+          TOKEN="${FINEGRAIN_TOKEN:-}" # Prefer fine-grained
+          if [ -z "$TOKEN" ]; then
+            TOKEN="${CLASSIC_TOKEN:-}"
+          fi
+          if [ -z "$TOKEN" ]; then
+            echo "ERROR: Neither PERMISSIVE_FINEGRAIN nor PERMISSIVE_CLASSIC secret is set. Provide a token with Projects (v2) write access." >&2
             exit 1
           fi
 
-          echo "$PROJECT_SYNC_TOKEN" | gh auth login --with-token
+          echo "$TOKEN" | gh auth login --with-token
 
           # Try to create the project (repo-scoped). If that fails try the alternate form.
           if gh project create --repo "$OWNER/$REPO" --title "$PROJECT_NAME" --format json > project.json 2>&1; then
