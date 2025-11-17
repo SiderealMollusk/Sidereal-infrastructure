@@ -17,7 +17,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
           PROJECT_SYNC_TOKEN: ${{ secrets.PROJECT_SYNC_TOKEN }}
-          PROJECT_NAME: ${{ vars.PROJECT_NAME || 'Backlog' }}
+          PROJECT_NAME: ${{ vars.PROJECT_NAME }}
         run: |
           # Use PROJECT_SYNC_TOKEN if available, otherwise use GITHUB_TOKEN
           TOKEN="${PROJECT_SYNC_TOKEN:-$GITHUB_TOKEN}"
@@ -54,13 +54,15 @@ jobs:
           
           echo "project_id=$project_id" >> $GITHUB_OUTPUT
           echo "backlog_column_id=$backlog_col_id" >> $GITHUB_OUTPUT
-          echo "token=$TOKEN" >> $GITHUB_OUTPUT
 
       - name: Resolve issue DB id
         id: issue_id
         env:
-          TOKEN: ${{ steps.resolve_ids.outputs.token }}
+          PROJECT_SYNC_TOKEN: ${{ secrets.PROJECT_SYNC_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
+          # Prefer PROJECT_SYNC_TOKEN, fall back to GITHUB_TOKEN
+          TOKEN="${PROJECT_SYNC_TOKEN:-$GITHUB_TOKEN}"
           issue_number=${{ github.event.issue.number }}
           repo=${{ github.repository }}
           issue_id=$(curl -s -H "Authorization: token $TOKEN" https://api.github.com/repos/${repo}/issues/${issue_number} | jq -r .id)
@@ -68,10 +70,13 @@ jobs:
 
       - name: Check existing card in Backlog column
         env:
-          TOKEN: ${{ steps.resolve_ids.outputs.token }}
+          PROJECT_SYNC_TOKEN: ${{ secrets.PROJECT_SYNC_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
           BACKLOG_COLUMN_ID: ${{ steps.resolve_ids.outputs.backlog_column_id }}
           ISSUE_ID: ${{ steps.issue_id.outputs.issue_id }}
         run: |
+          # Choose token
+          TOKEN="${PROJECT_SYNC_TOKEN:-$GITHUB_TOKEN}"
           # List cards in the Backlog column and see if one matches this issue id
           cards=$(curl -s -H "Authorization: token $TOKEN" -H "Accept: application/vnd.github.inertia-preview+json" \
             https://api.github.com/projects/columns/${BACKLOG_COLUMN_ID}/cards)
@@ -83,10 +88,12 @@ jobs:
 
       - name: Create card in Backlog column
         env:
-          TOKEN: ${{ steps.resolve_ids.outputs.token }}
+          PROJECT_SYNC_TOKEN: ${{ secrets.PROJECT_SYNC_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
           BACKLOG_COLUMN_ID: ${{ steps.resolve_ids.outputs.backlog_column_id }}
           ISSUE_ID: ${{ steps.issue_id.outputs.issue_id }}
         run: |
+          TOKEN="${PROJECT_SYNC_TOKEN:-$GITHUB_TOKEN}"
           resp=$(curl -s -X POST \
             -H "Authorization: token $TOKEN" \
             -H "Accept: application/vnd.github.inertia-preview+json" \
