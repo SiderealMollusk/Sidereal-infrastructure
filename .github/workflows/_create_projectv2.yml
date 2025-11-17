@@ -1,0 +1,62 @@
+name: Create ProjectV2 (temporary)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  create:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install GitHub CLI
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y curl ca-certificates gnupg lsb-release
+          curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
+          sudo chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg
+          echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
+          sudo apt-get update
+          sudo apt-get install -y gh
+
+      - name: Create repo-level ProjectV2 with gh
+        env:
+          PROJECT_SYNC_TOKEN: ${{ secrets.PROJECT_SYNC_TOKEN }}
+          PROJECT_NAME: ${{ vars.PROJECT_NAME }}
+          OWNER: ${{ github.repository_owner }}
+          REPO: ${{ github.event.repository.name }}
+        run: |
+          set -euo pipefail
+          if [ -z "${PROJECT_SYNC_TOKEN:-}" ]; then
+            echo "ERROR: PROJECT_SYNC_TOKEN is empty. Provide a token with Projects (v2) write access." >&2
+            exit 1
+          fi
+
+          echo "$PROJECT_SYNC_TOKEN" | gh auth login --with-token
+
+          # Try to create the project (repo-scoped). If that fails try the alternate form.
+          if gh project create --repo "$OWNER/$REPO" --title "$PROJECT_NAME" --format json > project.json 2>&1; then
+            echo "Project creation response:" && cat project.json
+          else
+            echo "First create attempt failed, trying alternate form..."
+            if gh project create --owner "$OWNER" --repo "$REPO" --title "$PROJECT_NAME" --format json > project.json 2>&1; then
+              echo "Project creation response:" && cat project.json
+            else
+              echo "Project creation failed; output:" && cat project.json || true
+              exit 1
+            fi
+          fi
+
+      - name: Print created project
+        run: |
+          if [ -f project.json ]; then
+            jq . project.json || cat project.json
+          else
+            echo "No project.json found"
+            exit 1
+          fi
