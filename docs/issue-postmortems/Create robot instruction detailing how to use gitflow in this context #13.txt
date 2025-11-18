@@ -1,0 +1,7 @@
+In writing the get-ready-issuues script
+1. Assumed the project was "classic" → it was actually Projects v2.
+2. Assumed the Status field had option { id, name } → real schema only has name + optionId.
+3. Assumed we needed field IDs → filtering by field.name = "Status" was enough.
+4. Assumed heredocs + @- were safe → gh api graphql chokes on tiny quoting issues.
+5. Assumed every fieldValue node had the same shape → some nodes are empty or different types.
+6. Assumed errors meant bad logic → the real issue was malformed GraphQL input caused by shell quoting.
