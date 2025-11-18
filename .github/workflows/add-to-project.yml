@@ -1,0 +1,154 @@
+name: Add Issue to Project Board
+
+# Trigger on issue creation only (not PRs)
+on:
+  issues:
+    types:
+      - opened
+
+jobs:
+  add-to-project:
+    name: Add issue to project board
+    runs-on: ubuntu-latest
+    permissions:
+      issues: read
+      contents: read
+    
+    steps:
+      - name: Add issue to project
+        uses: actions/add-to-project@v1.0.2
+        with:
+          # Project URL: https://github.com/users/SiderealMollusk/projects/5
+          # The project-url should be the full URL to your project
+          project-url: https://github.com/users/SiderealMollusk/projects/5
+          # GitHub token with 'project' and 'repo' scopes
+          github-token: ${{ secrets.ADD_TO_PROJECT_PAT }}
+          # Optional: specify which column/status to add to
+          # For Projects V2, this is typically handled by the project's default settings
+          # labeled: bug, enhancement  # Uncomment to only add issues with specific labels
+
+# =============================================================================
+# CONFIGURATION INSTRUCTIONS
+# =============================================================================
+#
+# This workflow automatically adds newly opened issues to the specified
+# GitHub Project board. It uses the official GitHub actions/add-to-project
+# action which works with GitHub Projects V2 (the modern project system).
+#
+# SETUP REQUIREMENTS:
+# -------------------
+#
+# 1. CREATE A PERSONAL ACCESS TOKEN (PAT):
+#    - Go to: https://github.com/settings/tokens
+#    - Click "Generate new token (classic)" or use fine-grained tokens
+#    - For classic token, select scopes:
+#      * 'repo' (full control of private repositories)
+#      * 'project' (full control of projects)
+#    - For fine-grained token:
+#      * Repository access: This repository
+#      * Permissions: Issues (Read and write), Projects (Read and write)
+#    - Copy the generated token
+#
+# 2. ADD THE TOKEN AS A REPOSITORY SECRET:
+#    - Go to: https://github.com/SiderealMollusk/Sidereal-infrastructure/settings/secrets/actions
+#    - Click "New repository secret"
+#    - Name: ADD_TO_PROJECT_PAT
+#    - Value: [paste your token]
+#    - Click "Add secret"
+#
+# 3. VERIFY YOUR PROJECT SETUP:
+#    - Ensure the project at https://github.com/users/SiderealMollusk/projects/5 exists
+#    - The project should be a GitHub Projects V2 project (not legacy/classic)
+#    - The project should have a 'Backlog' status/column configured
+#    - Set up automation rules in the project settings if needed:
+#      * Go to project settings → Workflows
+#      * Configure "Item added to project" to set status to "Backlog"
+#
+# 4. PROJECT V2 vs CLASSIC PROJECTS:
+#    - This workflow uses actions/add-to-project which works with Projects V2
+#    - Projects V2 is the modern GitHub project system (uses GraphQL API)
+#    - If your project is a Classic Project (uses REST API), see alternative below
+#
+# NOTES:
+# ------
+# - Only issues (not pull requests) will be added to the project
+# - The action will automatically assign the issue to the project
+# - Column/status assignment is typically handled by project automation rules
+# - If the PAT lacks permissions, the workflow will fail with a clear error
+#
+# =============================================================================
+# ALTERNATIVE: FOR CLASSIC PROJECTS (Legacy)
+# =============================================================================
+#
+# If your project at /projects/5 is a Classic Project (not Projects V2),
+# uncomment and use this alternative job instead:
+#
+# jobs:
+#   add-to-classic-project:
+#     name: Add issue to classic project board
+#     runs-on: ubuntu-latest
+#     if: github.event.issue.pull_request == null  # Only issues, not PRs
+#     
+#     steps:
+#       - name: Get project and column IDs
+#         id: get-ids
+#         run: |
+#           # Get all user projects
+#           PROJECTS=$(curl -s -H "Authorization: token ${{ secrets.ADD_TO_PROJECT_PAT }}" \
+#             -H "Accept: application/vnd.github.inertia-preview+json" \
+#             https://api.github.com/users/SiderealMollusk/projects)
+#           
+#           # Find project 5 and extract its numeric ID
+#           PROJECT_ID=$(echo "$PROJECTS" | jq -r '.[] | select(.number == 5) | .id')
+#           
+#           if [ -z "$PROJECT_ID" ]; then
+#             echo "Error: Could not find project #5"
+#             exit 1
+#           fi
+#           
+#           echo "project_id=$PROJECT_ID" >> $GITHUB_OUTPUT
+#           
+#           # Get columns for this project
+#           COLUMNS=$(curl -s -H "Authorization: token ${{ secrets.ADD_TO_PROJECT_PAT }}" \
+#             -H "Accept: application/vnd.github.inertia-preview+json" \
+#             https://api.github.com/projects/$PROJECT_ID/columns)
+#           
+#           # Find the "Backlog" column
+#           COLUMN_ID=$(echo "$COLUMNS" | jq -r '.[] | select(.name == "Backlog") | .id')
+#           
+#           if [ -z "$COLUMN_ID" ]; then
+#             echo "Error: Could not find 'Backlog' column"
+#             echo "Available columns:"
+#             echo "$COLUMNS" | jq -r '.[].name'
+#             exit 1
+#           fi
+#           
+#           echo "column_id=$COLUMN_ID" >> $GITHUB_OUTPUT
+#       
+#       - name: Add issue to project column
+#         run: |
+#           # Create a card in the Backlog column for this issue
+#           curl -X POST \
+#             -H "Authorization: token ${{ secrets.ADD_TO_PROJECT_PAT }}" \
+#             -H "Accept: application/vnd.github.inertia-preview+json" \
+#             -H "Content-Type: application/json" \
+#             https://api.github.com/projects/columns/${{ steps.get-ids.outputs.column_id }}/cards \
+#             -d '{
+#               "content_id": ${{ github.event.issue.id }},
+#               "content_type": "Issue"
+#             }'
+#           
+#           echo "✅ Successfully added issue #${{ github.event.issue.number }} to Backlog column"
+#
+# =============================================================================
+# TESTING THE WORKFLOW
+# =============================================================================
+#
+# To test this workflow:
+# 1. Ensure the ADD_TO_PROJECT_PAT secret is configured
+# 2. Create a new issue in this repository
+# 3. Check the "Actions" tab to see the workflow run
+# 4. Verify the issue appears in the Backlog column of project #5
+# 5. If it fails, check the workflow logs for error messages
+#
+# =============================================================================
