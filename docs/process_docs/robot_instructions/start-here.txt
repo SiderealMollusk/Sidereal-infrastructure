@@ -1,0 +1,9 @@
+if( /Users/virgil/Developer/k8/docs/llm-branch-memory is empty){
+    if(repo.isTidy){
+        plan next move
+    } else {
+        tidy repo
+    }
+} else {
+    //llm-branch-memory has data   
+}
