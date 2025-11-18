@@ -1,9 +1,7 @@
-if( /Users/virgil/Developer/k8/docs/llm-branch-memory is empty){
-    if(repo.isTidy){
-        plan next move
-    } else {
-        tidy repo
-    }
-} else {
-    //llm-branch-memory has data   
-}
+if (directory "/Users/virgil/Developer/k8/docs/llm-branch-memory" is empty):
+    if (repo.isTidy):
+        print("plan next move")
+    else:
+        print("tidy repo")
+else:
+    print("do what it says")
