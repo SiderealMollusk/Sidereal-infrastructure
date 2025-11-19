@@ -1,0 +1,116 @@
+
+
+version: 1
+level: L3
+type: issue_body_template
+
+meta:
+  description: >-
+    Standard L3 issue body template. Used for shaping work, not implementation.
+  notes: >-
+    This is consumed by scripts to generate Markdown issue bodies. Do not put
+    work product here; this is structure only.
+
+placeholders:
+  issue_number: "{{issue_number}}"
+  issue_title: "{{issue_title}}"
+  author: "{{author}}"
+  created_at: "{{created_at}}"
+
+sections:
+  - id: summary
+    heading: "Summary"
+    required: true
+    prompt: >-
+      One or two sentences describing what this L3 issue is about and why it exists.
+
+  - id: problem
+    heading: "Problem / Motivation"
+    required: true
+    prompt: >-
+      What problem are we trying to solve? What pain or ambiguity exists today?
+
+  - id: goals
+    heading: "Goals"
+    required: true
+    prompt: >-
+      Bullet list of things this L3 work must accomplish.
+    format: list
+
+  - id: non_goals
+    heading: "Non-goals"
+    required: false
+    prompt: >-
+      Bullet list of things explicitly out of scope for this issue.
+    format: list
+
+  - id: constraints
+    heading: "Constraints / Context"
+    required: false
+    prompt: >-
+      Important constraints, dependencies, or existing systems this work must respect.
+
+  - id: approach
+    heading: "High-level Approach"
+    required: true
+    prompt: >-
+      Sketch the main ideas, options, and the recommended direction. No low-level
+      implementation details.
+
+  - id: breakdown
+    heading: "Proposed Breakdown to L2 is"
+    required: true
+    prompt: >-
+      Describe how this should turn into L2 issues. Include rough groupings
+      and responsibilities.
+    format: list
+
+  - id: open_questions
+    heading: "Open Questions / Risks"
+    required: false
+    prompt: >-
+      Anything that still feels uncertain, risky, or needs a human decision.
+    format: list
+
+  - id: links
+    heading: "References / Links"
+    required: false
+    prompt: >-
+      Links to related issues, docs, diagrams, or external references.
+    format: list
+
+render:
+  # How a script might stitch sections into a Markdown body
+  pattern: |
+    # {{issue_title}}
+
+    **Issue #{{issue_number}} · Level L3**  
+    Author: {{author}}  
+    Created: {{created_at}}
+
+    ## Summary
+    {{summary}}
+
+    ## Problem / Motivation
+    {{problem}}
+
+    ## Goals
+    {{goals}}
+
+    ## Non-goals
+    {{non_goals}}
+
+    ## Constraints / Context
+    {{constraints}}
+
+    ## High-level Approach
+    {{approach}}
+
+    ## Proposed Breakdown (L2/L1)
+    {{breakdown}}
+
+    ## Open Questions / Risks
+    {{open_questions}}
+
+    ## References / Links
+    {{links}}

@@ -1,0 +1,42 @@
+
+
+# TODOs Derived from L3 Issue Lifecycle
+
+## Scripts to Implement
+
+- [ ] Script to generate L3 issues template
+- [ ] `claim-L3-from-queue.sh` — full pipeline (move issue, create branch, init memory, auto‑research)
+- [ ] Script to generate sig.yaml template
+- [ ] Script to clean/consolidate sig.yaml before review
+- [ ] Script to delete working memory on merge
+- [ ] Script to create L2/L1 sub‑issues from L3 decomposition
+- [ ] Script to check repo state (main + clean) before operations
+- [ ] Script to detect environment details for sig.yaml
+
+## Project Automation
+
+- [ ] Move PR → "Ready for Review" automatically when opened
+- [ ] Move PR → "In Review" upon reviewer assignment
+- [ ] Move PR → "Done" when merged
+- [ ] Auto‑link PRs to issues
+
+## Documentation Deliverables
+
+- [ ] Write L3 template instructions
+- [ ] Document required fields inside sig.yaml
+- [ ] Define L2 and L1 lifecycle docs
+- [ ] Document branch‑naming conventions
+- [ ] Provide examples of decomposition patterns
+
+## Structural Work
+
+- [ ] Ensure `llm-branch-memory/*` is always git‑ignored on main
+- [ ] Add validation to ensure no work product appears in memory dirs
+- [ ] Create index of process_docs for navigation
+- [ ] Define escalation protocol more formally
+
+## Future Expansions
+
+- [ ] Add agent‑identity stamping to sig.yaml (optional)
+- [ ] Supervisory script to inspect “stale” branches/issues
+- [ ] Research caching/replication of context across L3→L2→L1
