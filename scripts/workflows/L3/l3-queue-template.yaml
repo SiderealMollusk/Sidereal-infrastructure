@@ -1,0 +1,41 @@
+queue_stub:
+  origin:
+    triggering_event: ""
+    reporter: ""
+    background_context: ""
+
+  need:
+    primary_need: ""
+    secondary_needs: ""
+    rationale: ""
+
+  current_understanding:
+    confirmed_details: []
+    suspected_factors: []
+    unknowns: []
+
+  solution_description:
+    proposed_approach: ""
+    alternative_options: ""
+    success_criteria: ""
+    output_artifacts: []
+
+  reasoning:
+    assumptions: []
+    tradeoffs: []
+    risks: []
+
+  intent:
+    primary_objective: ""
+    secondary_goals: ""
+    expected_value_or_impact: ""
+
+  direction:
+    anticipated_direction: ""
+    target_team_or_specialty: ""
+    expected_deliverables: ""
+
+  attachments:
+    links: []
+    artifacts: []
+    notes: ""

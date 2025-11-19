@@ -1,0 +1,57 @@
+queue_stub:
+  origin:
+    triggering_event: "Initiating documentation architecture for the personal computational realm."
+    reporter: "Virgil (system owner)"
+    background_context: "Infrastructure spans GitHub repo workflows, TailScale mesh, i3 coder host, NVIDIA LLM/render node, cockpit Mac client, and future Matrix-based comms analysis."
+
+  need:
+    primary_need: "Define a durable documentation structure that tracks the evolving infra systems and operational workflows."
+    secondary_needs: "Capture relationships between systems, document partial/experimental services, and guide contribution processes."
+    rationale: "Without a shared structure, knowledge stays implicit and automation scripts cannot rely on consistent references."
+
+  current_understanding:
+    confirmed_details:
+      - "All systems are administered via this repo; automation scripts already exist but lack supporting docs."
+      - "Multiple heterogeneous machines (TailScale, coder host, NVIDIA laptop, cockpit Mac) participate in the realm."
+    suspected_factors:
+      - "Documentation needs to cover both operational procedures and architectural intent to stay useful."
+    unknowns:
+      - "Preferred taxonomy/granularity for systems vs. services."
+      - "Any compliance or stakeholder-specific documentation constraints."
+
+  solution_description:
+    proposed_approach: "Create a layered doc hierarchy (Overview → Systems → Services → Operations) with templates for each layer and cross-linking to automation scripts."
+    alternative_options: "Start with lightweight README per system and grow organically; adopt an existing framework like Diátaxis."
+    success_criteria: "Every system has at least a skeleton doc, workflows link to docs, and new components follow a documented template."
+    out_of_scope: "Implementing the infrastructure itself; detailed runbooks for components not yet designed."
+    output_artifacts:
+      - "Docs/structure proposal"
+      - "System-specific stub files"
+      - "Template definitions for future docs"
+
+  reasoning:
+    decision_drivers:
+      - "Need for quick onboarding and recall when switching between systems."
+      - "Desire to keep documentation close to automation scripts."
+    assumptions:
+      - "Single maintainer initially; structure must scale without heavy tooling."
+    tradeoffs:
+      - "More structure now vs. initial time investment."
+    risks:
+      - "Docs become stale if not tied to workflows."
+      - "Over-engineering the hierarchy before usage patterns emerge."
+
+  intent:
+    primary_objective: "Deliver a documentation structure proposal that can be adopted immediately."
+    secondary_goals: "Surface missing knowledge, make future automation requests traceable to docs."
+    expected_value_or_impact: "Improved clarity on the computational realm, enabling faster changes and better coordination between systems."
+
+  direction:
+    anticipated_direction: "Draft architecture outline, review with user, then iterate on templates and populate priority systems."
+    target_team_or_specialty: "Infra/process design; primarily Virgil with possible future collaborators."
+    expected_deliverables: "Document structure proposal and initial populated stubs for each major system."
+
+  attachments:
+    links: []
+    artifacts: []
+    notes: "Emphasis on high-confidence sections first; leave hooks for workshop iterations."
